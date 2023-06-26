@@ -1,0 +1,154 @@
+﻿@page "/Registros"
+
+ @if (!ShowForm)
+{ 
+    <h3>Registros(@Registros.Count)</h3>
+
+    <div class="mb-2">
+        <button class="btn btn-success"
+        @onclick="()=>{ShowForm = !ShowForm;}">
+            Registrar
+        </button>
+    </div>
+}
+<div class="container">
+{
+    @if (ShowForm)
+    {
+        <h3>@TituloForm</h3>
+
+        <EditForm Model="request" OnValidSubmit="Send">
+            <div class="mb-3 input-group">
+                <label class="input-group-text">Nombre</label>
+                <InputText class="form-control" @bind-Value="@request.Nombre"></InputText>
+            </div>
+            <div class="mb-3 input-group">
+                <label class="input-group-text">Apellido</label>
+                <InputText class="form-control" @bind-Value="@request.Apellido"></InputText>
+            </div>
+            <div class="mb-3 input-group">
+                <label class="input-group-text">Cedula</label>
+                <InputText class="form-control" @bind-Value="@request.Cedula"></InputText>
+            </div>
+            <div class="mb-3 input-group">
+                <label class="input-group-text">Codigo</label>
+                <InputText class="form-control" @bind-Value="@request.Codigo"></InputText>
+            </div>
+            <div class="mb-3 input-group">
+                <label class="input-group-text">FechaInicio</label>
+                <InputText class="form-control" @bind-Value="@request.FechaInicio"></InputText>
+            </div>
+            <div class="mb-3 input-group">
+                <label class="input-group-text">SueldoInicial</label>
+                <InputText class="form-control" @bind-Value="@request.SueldoInicial"></InputText>
+            </div>
+            <div class="mb-3 input-group">
+                <label class="input-group-text">Ocupacion</label>
+                <InputText class="form-control" @bind-Value="@request.Ocupacion"></InputText>
+            </div>
+            <div  class="btn-group">
+                <button type ="submit" class="btn btn-outline-success">
+                    Registrar Empleado
+                </button>
+                <button @onclick="Cancelar" class="btn btn-outline-danger">
+                    Cancelar Registro
+                </button>
+            </div>
+
+        </EditForm>
+    }
+    else
+    {
+        @foreach (var registro in Registros)
+        {
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <label class="card-title">@registro.Nombre</label>
+                    <div class="card-text">
+                        <label><b>Apellido:</b> @registro.Apellido</label>
+                    </div>
+                    <button @onclick="()=>Seleccionar(registro.Id)" class="btn btn-warning">Editar Empleado</button>
+                    <button @onclick="()=>Eliminar(registro)" class="btn btn-danger">Eliminar Registro</button>
+
+                </div>
+            </div>
+            
+        }
+    }
+</div>
+
+@code {
+    public string TituloForm => request.Id == 0 ? "Agregar registro" : "Modificar registro"; 
+    public bool ShowForm { get; set; } = false;
+    public string Filtro { get; set; } = "";
+    public List<RegistroResponse> Registros { get; set; }
+        = new List<RegistroResponse>();
+    public RegistroRequest request { get; set; } = new RegistroRequest();
+
+    void Cancelar()
+    {
+        request = new RegistroRequest();
+        ShowForm = false;
+    }
+
+
+    async Task CargarRegistros()
+    {
+        var resultado =
+        await RegistroServices.Consultar(Filtro);
+        if (resultado.Success)
+        {
+            Registros = resultado.Data!;
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarRegistros();
+    }
+    public async Task Send()
+    {
+        if(request.Id == 0)
+        {
+            //Debo registrar el empleado.. 
+            var r = await RegistroServices.Crear(request);
+            if (r.Success)
+            {
+                await CargarRegistros();
+                StateHasChanged();
+
+            }
+        }
+        else
+        {
+            //Debo solicitar modificar el registro..
+            var r = await RegistroServices.Modificar(request);
+            if (r.Success)
+            {
+                await  CargarRegistros();
+                StateHasChanged();
+            }
+
+        }
+    }
+
+    public void Seleccionar(int Id)
+    {
+        ShowForm = true;
+        request = Registros
+        .Where(R => R.Id == Id)
+        .Select(R => R.ToRequest())
+        .FirstOrDefault()?? new RegistroRequest();
+    }
+    public async Task Eliminar(RegistroResponse registro)
+    {
+        var resultado = await RegistroServices.Eliminar(registro.ToRequest()); 
+
+        if(resultado.Success)
+        {
+            await CargarRegistros();
+            StateHasChanged();
+        }
+    }
+
+
+}

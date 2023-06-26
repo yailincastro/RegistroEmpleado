@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.EntityFrameworkCore.Internal;
 using RegistroEmpleado.Data;
+using RegistroEmpleado.Data.Context;
+using RegistroEmpleado.Data.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
+builder.Services.AddDbContext<RegistroEmpleadoDbContext>();
+builder.Services.AddScoped<IRegistroEmpleadoDbContext, RegistroEmpleadoDbContext>();
+builder.Services.AddScoped<IRegistroServices, RegistroServices>();
 
 var app = builder.Build();
 
